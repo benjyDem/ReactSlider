@@ -1,5 +1,8 @@
 import React from 'react';
 
+
+const SLIDE_TO_NEXT_TRESHOLD = 20;
+
 class ReactSlider extends React.Component {
 
     constructor(props) {
@@ -332,9 +335,9 @@ class ReactSlider extends React.Component {
             if (position === this.prevPosition) {
 
                 // If a clear direction was given to the drag go in that direction if delta was bigger than treshold (20px)
-                if (this.state.axis === 'x' && this.delta[0] > this.delta[1] && this.delta[0] > 20) {
+                if (this.state.axis === 'x' && this.delta[0] > this.delta[1] && this.delta[0] > SLIDE_TO_NEXT_TRESHOLD) {
                     position = this.direction[0] === 'right' ? position - pageSize : position + pageSize;
-                } else if(this.state.axis === 'y' && this.delta[1] > this.delta[0] && this.delta[1] > 20) {
+                } else if(this.state.axis === 'y' && this.delta[1] > this.delta[0] && this.delta[1] > SLIDE_TO_NEXT_TRESHOLD) {
                     position = this.direction[1] === 'bottom' ? position - pageSize : position + pageSize;
                 }
             }

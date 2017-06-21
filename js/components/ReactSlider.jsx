@@ -315,7 +315,7 @@ class ReactSlider extends React.Component {
     onPointerMove(e) {
         if (this.dragging) {
             let coords = this.state.touch ? [e.changedTouches[0].pageX, e.changedTouches[0].pageY] : [e.pageX, e.pageY];
-            this.direction = [coords[0] > this.coords[0] ? 'left' : 'right', coords[1] > this.coords[1 ? 'bottom' : 'top']];
+            this.direction = [coords[0] > this.coords[0] ? 'left' : 'right', coords[1] > this.coords[1] ? 'bottom' : 'top'];
             this.setSliderPosition(this.state.styles.position + (coords[0] - this.coords[0]) );
             this.delta = [Math.abs(coords[0] - this.coords[0]), Math.abs(coords[1] - this.coords[1])];
             this.coords = coords;

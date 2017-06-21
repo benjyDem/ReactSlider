@@ -1,0 +1,41 @@
+.react-slider {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+.react-slider ul, .react-slider li {
+  padding: 0;
+  margin: 0;
+}
+.react-slider li, .react-slider li * {
+  -webkit-touch-callout: none;
+  /* iOS Safari */
+  -webkit-user-select: none;
+  /* Safari */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* Internet Explorer/Edge */
+  user-select: none;
+}
+.react-slider li img {
+  pointer-events: none;
+}
+
+.react-slider-slides {
+  position: relative;
+}
+
+.react-slider-slide {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.react-slider.vertical-slider {
+  height: 100%;
+}
+.react-slider.vertical-slider .react-slider-slide {
+  display: block;
+  width: 100%;
+}

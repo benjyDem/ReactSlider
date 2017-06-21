@@ -1,5 +1,3 @@
-
-
 .react-slider {
     position: relative;
     display: block;
@@ -32,4 +30,12 @@
 .react-slider-slide {
     display: inline-block;
     vertical-align: top;
+}
+
+.react-slider.vertical-slider {
+    height: 100%;
+    .react-slider-slide {
+        display: block;
+        width: 100%;
+    }
 }

@@ -1,14 +1,38 @@
 import React from 'react';
-require('../../scss/ReactSlider.scss');
 
 class ReactSlider extends React.Component {
 
     constructor(props) {
         super(props);
 
-        this.state = {
-            slidesToShow: props.slidesToShow || 1,
-            slidesToScroll: props.slidesToScroll || 1,
+        this.state = ReactSlider.stateFromProps(props);
+        this.state.styles = {};
+
+        // map keys for both axes to use same functions for vertical and horizontal sliders
+        this.keys = {
+            x: {
+                size: 'width',
+                oppositeSize: 'height',
+                offsetSize: 'offsetWidth',
+                offsetOpposite: 'offsetHeight',
+                direction: 'left'
+            },
+            y: {
+                size: 'height',
+                oppositeSize: 'width',
+                offsetSize: 'offsetHeight',
+                offsetOpposite: 'offsetWidth',
+                direction: 'top'
+            }
+        };
+
+
+    }
+
+    static stateFromProps(props) {
+        let state = {
+            visibleSlides: props.visibleSlides || 1,
+            moveSlides: props.moveSlides || 1,
             axis: props.axis || 'x',
             transition: props.transition || 'slide',
             transitionSpeed: 500,
@@ -17,19 +41,38 @@ class ReactSlider extends React.Component {
             lazyLoad: true,
             adaptiveHeight: props.adaptiveHeight || false,
             loadedImages: [],
+            dots: props.dots || false,
+            fullPages: props.fullPages || false,
+            prevText: props.prevText || 'Previous',
+            nextText: props.nextText || 'Next',
+            desktopDrag: props.desktopDrag || false, // if true desktop users can drag with mouse
+            auto: props.auto || false,
+            autoSpeed: props.autoSpeed || 4000,
 
-            styles: {
-                position: 0,
-                slideWidth: 'auto',
-                slideHeight: 'auto'
-            }
+            touch: (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0))
         };
+        state.axisClass = state.axis === 'x' ? '' : 'vertical-slider';
 
+        if (props.children.length % state.visibleSlides === 0) {
+            state.pages = Math.ceil(props.children.length / state.moveSlides) - state.moveSlides;
+        }
+
+        let slideNumber = props.children.length;
+        if (state.fullPages) {
+            while(slideNumber % state.visibleSlides !==0) {
+                slideNumber++;
+            }
+        }
+        state.pages = Math.ceil(slideNumber / state.moveSlides) - (state.visibleSlides - state.moveSlides);
+
+        return state;
     }
 
     componentDidMount() {
+
+        // wait for rendering to compute sizes
         requestAnimationFrame(() => {
-            this.setSliderState();
+            this.setSliderStyles();
         });
 
         this._onPointerUp = this.onPointerUp.bind(this);
@@ -37,38 +80,64 @@ class ReactSlider extends React.Component {
         this._onResize = this.onResize.bind(this);
 
         window.addEventListener('resize', this._onResize);
-        window.addEventListener('mouseup', this._onPointerUp);
-        window.addEventListener('mousemove', this._onPointerMove);
+
+        if (!this.state.touch) {
+            if (this.state.desktopDrag) {
+                window.addEventListener('mouseup', this._onPointerUp);
+                window.addEventListener('mousemove', this._onPointerMove);
+            }
+        } else  {
+            window.addEventListener('touchend', this._onPointerUp);
+            window.addEventListener('touchmove', this._onPointerMove);
+        }
     }
 
     componentWillUnmount() {
 
         window.removeEventListener('resize', this._onResize);
-        window.removeEventListener('mouseup', this._onPointerUp);
-        window.removeEventListener('mousemove', this._onPointerMove);
+
+        if (!this.state.touch) {
+            if (this.state.desktopDrag) {
+                window.removeEventListener('mouseup', this._onPointerUp);
+                window.removeEventListener('mousemove', this._onPointerMove);
+            }
+        } else {
+            window.removeEventListener('touchend', this._onPointerUp);
+            window.removeEventListener('touchmove', this._onPointerMove);
+        }
+
+    }
+
+    componentWillReceiveProps(props) {
+        this.setState(ReactSlider.stateFromProps(props), () => this.setSliderStyles());
     }
 
     render() {
+        if (this.state.auto) this.autoTimeout();
 
         let children = this.getChildren();
 
-        let listeners = {
-            onMouseDown: this.onPointerDown.bind(this)
-        };
+        let listeners = this.state.touch ?  { onTouchStart: this.onPointerDown.bind(this) } : { onMouseDown: this.onPointerDown.bind(this) };
 
-        return <div ref="slider" className="react-slider" {...listeners}>
+        let style = {
+            transition: this.getTransitionCSS()
+        };
+        style[this.keys[this.state.axis].size] = this.state.styles.overallSize+'px';
+        style[this.keys[this.state.axis].oppositeSize] = this.state.styles.oppositeSize+'px';
+        style[this.keys[this.state.axis].direction] = this.state.styles.position+'px';
+
+        let liStyle = {};
+        liStyle[this.keys[this.state.axis].size] = this.state.styles.slideSize+'px';
+
+        return <div ref="slider" className={"react-slider " + this.state.axisClass }>
 
             <ul className="react-slider-slides"
-                style={ {
-                    width: this.state.styles.overallWidth+'px',
-                    height: this.state.styles.slideHeight+'px',
-                    left: this.state.styles.position+'px',
-                    transition: this.getTransitionCSS()
-                }}>
+                {...listeners}
+                style={ style }>
 
                 { children.map((child, i) => {
                     return <li key={i}
-                               style={{width: this.state.styles.slideWidth+'px'}}
+                               style={liStyle}
                                className="react-slider-slide">
                         {child}
                     </li>
@@ -77,6 +146,7 @@ class ReactSlider extends React.Component {
             </ul>
 
             {this.state.arrows && this.renderArrows()}
+            {this.state.dots && this.renderDots()}
         </div>;
     }
 
@@ -86,48 +156,77 @@ class ReactSlider extends React.Component {
             <button className="prev"
                     disabled={!this.state.infinite &&this.state.styles.position >= this.state.styles.maxPosition}
                     onClick={() => this.goToPrevSlide()}>
-                {this.props.prevText || 'Previous'}
+                {this.state.prevText}
             </button>
             <button className="next"
                     disabled={!this.state.infinite && this.state.styles.position <= this.state.styles.minPosition }
                     onClick={() => this.goToNextSlide()}>
-                {this.props.nextText || 'Next'}
+                {this.state.nextText}
             </button>
         </div>;
     }
 
+    renderDots() {
+        let pages = [];
+        for (let i = 0; i<this.state.pages; ++i) { pages.push(i); }
+        return <ul className="react-slider-dots">
+            {
+                pages.map((page) => {
+                    let position = this.getPagePosition(page);
+                    return <li key={"page-dot-"+page}>
+                        <button  disabled={this.state.styles.position === position }
+                                 onClick={() => this.setSliderPosition(position)}>{page+1}</button>
+                    </li>
+                })
+            }
+        </ul>
+    }
+
     goToPrevSlide() {
-        this.setSliderPosition(this.state.styles.position + this.state.styles.slideWidth );
+        this.setSliderPosition(this.state.styles.position + this.state.styles.slideSize*this.state.moveSlides );
     }
 
     goToNextSlide() {
-        this.setSliderPosition( this.state.styles.position - this.state.styles.slideWidth );
+        this.setSliderPosition( this.state.styles.position - this.state.styles.slideSize*this.state.moveSlides );
+    }
+
+    getPagePosition(page) {
+        if (page === this.state.pages -1) return this.state.styles.minPosition;
+        return -this.state.styles.slideSize * this.state.moveSlides * page;
     }
 
     setSliderPosition(position) {
 
+        if (this.state.infinite) {
+            if (position > this.state.styles.maxPosition) {
+                position = this.state.styles.minPosition;
+            } else if (position < this.state.styles.minPosition) {
+                position = this.state.styles.maxPosition;
+            }
+        }
         position = Math.min(Math.max(position, this.state.styles.minPosition ), this.state.styles.maxPosition);
         this.setState({
             styles: Object.assign({}, this.state.styles,{position: position})
         }, () => this.loadVisibleSlideImages());
     }
 
-    setSliderState() {
+    setSliderStyles() {
 
-        let slideWidth = this.refs.slider.offsetWidth / this.state.slidesToShow;
+        let slideSize = this.refs.slider[this.keys[this.state.axis].offsetSize] / this.state.visibleSlides;
         let styles ={
-            slideWidth: slideWidth,
-            overallWidth: slideWidth * this.props.children.length,
+            slideSize: slideSize,
+            overallSize: slideSize * this.props.children.length,
             position: 0,
             maxPosition: 0
         };
 
-        styles.minPosition = -( this.props.children.length * styles.slideWidth - styles.slideWidth * this.state.slidesToShow);
+        styles.minPosition = -( this.props.children.length * styles.slideSize - styles.slideSize * this.state.visibleSlides);
+        if (this.state.fullPages && this.props.children % this.state.visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
 
         if (this.refs.slider.getElementsByClassName('react-slider-slide').length) {
 
-            styles.slideHeight = this.state.adaptiveHeight ?
-                this.refs.slider.getElementsByClassName('react-slider-slide')[this.state.activeSlide].offsetHeight :
+            styles.oppositeSize = this.state.adaptiveHeight ?
+                this.refs.slider.getElementsByClassName('react-slider-slide')[this.state.activeSlide][this.keys[this.state.axis].offsetOpposite] :
                 'auto';
         }
 
@@ -141,7 +240,7 @@ class ReactSlider extends React.Component {
         if (this.dragging) return 'none';
         switch (this.state.transition) {
             case 'slide':
-                return 'left '+this.state.transitionSpeed+'ms ease-in';
+                return (this.state.axis === 'x' ? 'left' : 'top')+' '+this.state.transitionSpeed+'ms ease-in';
             case 'fade':
                 return 'opacity '+this.state.transitionSpeed+'ms ease-in';
         }
@@ -179,11 +278,12 @@ class ReactSlider extends React.Component {
     }
 
     loadVisibleSlideImages() {
+
         if (!this.imagesPerSlides.length) return;
 
-        let activeSlide = Math.abs( Math.round( this.state.styles.position / this.state.styles.slideWidth ) );
+        let activeSlide = Math.abs( Math.round( this.state.styles.position / this.state.styles.slideSize ) );
 
-        for (let i= activeSlide, iLength = activeSlide+this.state.slidesToShow; i< iLength; ++i) {
+        for (let i= activeSlide, iLength = activeSlide+this.state.visibleSlides; i< iLength; ++i) {
 
             if (!this.imagesPerSlides[i]) continue;
             this.imagesPerSlides[i].forEach((imageToLoad) => {
@@ -206,12 +306,12 @@ class ReactSlider extends React.Component {
     onPointerDown(e) {
         this.dragging = true;
         this.prevPosition = this.state.styles.position;
-        this.coords = [e.pageX, e.pageY];
+        this.coords = this.state.touch ? [e.touches[0].pageX, e.touches[0].pageY] : [e.pageX, e.pageY];
     }
 
     onPointerMove(e) {
         if (this.dragging) {
-            let coords = [e.pageX, e.pageY];
+            let coords = this.state.touch ? [e.changedTouches[0].pageX, e.changedTouches[0].pageY] : [e.pageX, e.pageY];
             this.direction = [coords[0] > this.coords[0] ? 'left' : 'right', coords[1] > this.coords[1 ? 'bottom' : 'top']];
             this.setSliderPosition(this.state.styles.position + (coords[0] - this.coords[0]) );
             this.coords = coords;
@@ -224,13 +324,28 @@ class ReactSlider extends React.Component {
     }
 
     magnetize() {
-        let position = Math.ceil(this.state.styles.position / this.state.styles.slideWidth) * this.state.styles.slideWidth;
-        if (position === this.prevPosition) position = this.direction[0] === 'right' ? position - this.state.styles.slideWidth : position + this.state.styles.slideWidth;
-        this.setSliderPosition(position);
+        if (this.direction) {
+            let pageSize = this.state.styles.slideSize * this.state.visibleSlides;
+            let position = Math.ceil(this.state.styles.position / pageSize) * pageSize;
+
+            if (position === this.prevPosition) {
+                position = this.direction[0] === 'right' ? position - pageSize : position + pageSize;
+            }
+
+            this.setSliderPosition(position);
+            this.direction = null;
+        }
     }
 
     onResize() {
-        this.setSliderState();
+        this.setSliderStyles();
+    }
+
+    autoTimeout() {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => {
+            this.goToNextSlide();
+        }, this.state.autoSpeed);
     }
 
 }

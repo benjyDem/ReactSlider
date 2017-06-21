@@ -7,16 +7,21 @@ class Example extends React.Component {
         super(props);
 
         this.state = {
-            visibleSlides: 2
+            visibleSlides: 2,
+            moveSlides: 1,
+            dots: true,
+            desktopDrag: true,
+            auto: true
         }
     }
 
     render() {
         return <div>
-            <ReactSlider visibleSlides={this.state.visibleSlides} dots={true} desktopDrag={true} auto={true}>
-            <div>
+            <ReactSlider {...this.state}>
+            <figure>
                 test
-            </div>
+                <span>ok</span>
+            </figure>
             <div>
                 test 2
             </div>

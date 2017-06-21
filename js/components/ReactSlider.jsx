@@ -36,7 +36,7 @@ class ReactSlider extends React.Component {
             axis: props.axis || 'x',
             transition: props.transition || 'slide',
             transitionSpeed: 500,
-            arrows: props.arrows || true,
+            arrows: typeof props.arrows !== 'undefined' ? props.arrows : true,
             infinite: props.infinite || false,
             lazyLoad: true,
             adaptiveHeight: props.adaptiveHeight || false,
@@ -49,7 +49,7 @@ class ReactSlider extends React.Component {
             auto: props.auto || false,
             autoSpeed: props.autoSpeed || 4000,
 
-            touch: (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0))
+            touch: typeof window !== 'undefined' && (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0))
         };
         state.axisClass = state.axis === 'x' ? '' : 'vertical-slider';
 
@@ -145,7 +145,7 @@ class ReactSlider extends React.Component {
 
             </ul>
 
-            {this.state.arrows && this.renderArrows()}
+            {this.state.arrows && this.props.children.length > this.state.visibleSlides && this.renderArrows()}
             {this.state.dots && this.renderDots()}
         </div>;
     }
@@ -263,7 +263,7 @@ class ReactSlider extends React.Component {
 
     recursivelyFindImages(level, slide) {
         if (level.props && level.props.children) {
-            return React.Children.map(level.props.children, child => {
+            React.Children.map(level.props.children, child => {
 
                 if (child.type === "img" && this.state.loadedImages.indexOf(child.props.src) === -1) {
                     this.imagesPerSlides[slide].push(child.props.src);
@@ -314,6 +314,7 @@ class ReactSlider extends React.Component {
             let coords = this.state.touch ? [e.changedTouches[0].pageX, e.changedTouches[0].pageY] : [e.pageX, e.pageY];
             this.direction = [coords[0] > this.coords[0] ? 'left' : 'right', coords[1] > this.coords[1 ? 'bottom' : 'top']];
             this.setSliderPosition(this.state.styles.position + (coords[0] - this.coords[0]) );
+            this.delta = [Math.abs(coords[0] - this.coords[0]), Math.abs(coords[1] - this.coords[1])];
             this.coords = coords;
         }
     }
@@ -325,11 +326,17 @@ class ReactSlider extends React.Component {
 
     magnetize() {
         if (this.direction) {
-            let pageSize = this.state.styles.slideSize * this.state.visibleSlides;
+            let pageSize = this.state.fullPage ?  this.state.styles.slideSize * this.state.visibleSlides : this.state.styles.slideSize * this.state.moveSlides;
             let position = Math.ceil(this.state.styles.position / pageSize) * pageSize;
 
             if (position === this.prevPosition) {
-                position = this.direction[0] === 'right' ? position - pageSize : position + pageSize;
+
+                // If a clear direction was given to the drag go in that direction if delta was bigger than treshold (20px)
+                if (this.state.axis === 'x' && this.delta[0] > this.delta[1] && this.delta[0] > 20) {
+                    position = this.direction[0] === 'right' ? position - pageSize : position + pageSize;
+                } else if(this.state.axis === 'y' && this.delta[1] > this.delta[0] && this.delta[1] > 20) {
+                    position = this.direction[1] === 'bottom' ? position - pageSize : position + pageSize;
+                }
             }
 
             this.setSliderPosition(position);

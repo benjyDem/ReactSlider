@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-const REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD = 20;
+const REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD = 15;
 const REACT_SLIDER_DEFAULT_OPTIONS = {
     moveSlides: 1,
     visibleSlides: 1,
@@ -20,6 +20,8 @@ const REACT_SLIDER_DEFAULT_OPTIONS = {
     autoSpeed: 4000,
     adaptiveHeight: false
 };
+
+var REACT_SLIDER_IMAGE_COMPONENTS = [['img','src']];
 
 class ReactSlider extends React.Component {
 
@@ -47,14 +49,6 @@ class ReactSlider extends React.Component {
                 direction: 'top'
             }
         };
-
-        this.imageComponents = [];
-        this.addImageComponent('img', 'src');
-        if (this.props.imageComponents) {
-            this.props.imageComponents.forEach((iC) => {
-                this.addImageComponent(iC[0], iC[1]);
-            });
-        }
 
     }
 
@@ -108,6 +102,13 @@ class ReactSlider extends React.Component {
             window.addEventListener('touchend', this._onPointerUp);
             window.addEventListener('touchmove', this._onPointerMove);
         }
+
+        // size loading slides to slider height on mount
+        let slides = this.refs.slider.getElementsByClassName('is-loading');
+        for (let i = 0, iLength = slides.length; i<iLength; ++i) {
+            slides[i].style.minHeight = this.refs.slider.offsetHeight+'px';
+        }
+
     }
 
     componentWillUnmount() {
@@ -150,8 +151,7 @@ class ReactSlider extends React.Component {
 
         let liStyle = {};
         liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
-
-        return <div ref="slider" className={"react-slider " + this.state.axisClass }>
+        return <div ref="slider" className={"react-slider " + this.state.axisClass + (this.state.mounted ? '' : ' is-mounting') }>
 
             <ul className="react-slider-slides"
                 {...listeners}
@@ -168,7 +168,7 @@ class ReactSlider extends React.Component {
             </ul>
 
             {this.getOption('arrows') && this.props.children.length > this.getOption('visibleSlides') && this.renderArrows()}
-            {this.getOption('dots') && this.renderDots()}
+            {this.props.dots && this.renderDots()}
         </div>;
     }
 
@@ -289,6 +289,7 @@ class ReactSlider extends React.Component {
         }
 
         this.setState({
+            mounted: true,
             styles: styles
         }, () => this.loadVisibleSlideImages());
     }
@@ -317,8 +318,8 @@ class ReactSlider extends React.Component {
         return React.Children.map(
             this.props.children,
             (child, i) => {
-
                 this.imagesPerSlides.push([]);
+                if (i === 0) return child;
                 return React.cloneElement(child, {
                     children: this.findImages(child, i)
                 });
@@ -345,11 +346,10 @@ class ReactSlider extends React.Component {
             return React.Children.map(level.props.children, child => {
                 if (!child.props) return child;
                 let src;
-                for (let i = 0, iLength = this.imageComponents.length; i < iLength; i++ ) {
+                for (let i = 0, iLength = REACT_SLIDER_IMAGE_COMPONENTS.length; i < iLength; i++ ) {
+                    src = child.props[REACT_SLIDER_IMAGE_COMPONENTS[i][1]];
 
-                    src = child.props[this.imageComponents[i][1]];
-
-                    if (child.type === this.imageComponents[i][0] ) {
+                    if (child.type === REACT_SLIDER_IMAGE_COMPONENTS[i][0] ) {
 
                         if(this.state.loadedImages.indexOf(src) === -1) {
                             this.imagesPerSlides[slide].push(src);
@@ -372,8 +372,8 @@ class ReactSlider extends React.Component {
         return level;
     }
 
-    addImageComponent(component, propsAttribute) {
-        this.imageComponents.push([component, propsAttribute]);
+    static addImageComponent(component, propsAttribute) {
+        REACT_SLIDER_IMAGE_COMPONENTS.push([component, propsAttribute]);
     }
 
     loadVisibleSlideImages() {
@@ -439,7 +439,7 @@ class ReactSlider extends React.Component {
                 }
             }
 
-            if (position !== this.prevPosition) this.setSliderPosition(position);
+            if (this.getOption('transition') === 'slide' || position !== this.prevPosition) this.setSliderPosition(position);
             this.direction = null;
         }
     }
@@ -455,6 +455,11 @@ class ReactSlider extends React.Component {
         }, this.getOption('autoSpeed') );
     }
 
+    /**
+     * Bools that are false by default don't need to be accesed with the getOption method
+     * @param option
+     * @returns {*}
+     */
     getOption(option) {
         return typeof this.props[option] === 'undefined' ? REACT_SLIDER_DEFAULT_OPTIONS[option] : this.props[option];
     }

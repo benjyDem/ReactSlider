@@ -320,19 +320,13 @@ class ReactSlider extends React.Component {
 
                 this.imagesPerSlides.push([]);
                 return React.cloneElement(child, {
-                    children: this.recursivelyFindImages(child, i)
+                    children: this.findImages(child, i)
                 });
             }
         );
 
     }
 
-    recursivelyFindImages(level, slide) {
-        if (level.props && level.props.children) {
-            return React.Children.map(level.props.children, child => this.findImage(child, slide))
-        }
-        return level;
-    }
 
     /**
      * Loops over image components and checks if their propsAttribute is
@@ -342,34 +336,40 @@ class ReactSlider extends React.Component {
      * the function checks if each img's src has been added to the loadedImages
      * array. If not it doesn't display them but replaces them with a div
      * with the is-loading class
-     * @param child
+     * @param level
      * @param slide
      * @returns {*}
      */
-    findImage(child, slide) {
+    findImages(level, slide) {
+        if (level.props && level.props.children) {
+            return React.Children.map(level.props.children, child => {
+                if (!child.props) return child;
+                let src;
+                for (let i = 0, iLength = this.imageComponents.length; i < iLength; i++ ) {
 
-        if (!child.props) return child;
-        let src;
-        for (let i = 0, iLength = this.imageComponents.length; i < iLength; i++ ) {
+                    src = child.props[this.imageComponents[i][1]];
 
-            src = child.props[this.imageComponents[i][1]];
+                    if (child.type === this.imageComponents[i][0] ) {
 
-            if (child.type === this.imageComponents[i][0] ) {
+                        if(this.state.loadedImages.indexOf(src) === -1) {
+                            this.imagesPerSlides[slide].push(src);
+                            return React.createElement('div', {
+                                className: child.className ?child.className  +' is-loading' : ' is-loading'
+                            });
+                        } else {
+                            return child;
+                        }
 
-                if(this.state.loadedImages.indexOf(src) === -1) {
-                    this.imagesPerSlides[slide].push(src);
-                    return React.createElement('div', {
-                        className: child.className ?child.className  +' is-loading' : ' is-loading'
-                    });
-                } else {
-                    return this.recursivelyFindImages(child, slide);
+                    }
                 }
 
-            }
+                return React.cloneElement(child, {
+                    children: this.findImages(child, slide)
+                });
+
+            })
         }
-
-        return this.recursivelyFindImages(child, slide);
-
+        return level;
     }
 
     addImageComponent(component, propsAttribute) {

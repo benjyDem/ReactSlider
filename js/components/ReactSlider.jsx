@@ -1,14 +1,33 @@
 import React from 'react';
 
 
-const SLIDE_TO_NEXT_TRESHOLD = 20;
+const REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD = 20;
+const REACT_SLIDER_DEFAULT_OPTIONS = {
+    moveSlides: 1,
+    visibleSlides: 1,
+    dots: false,
+    arrows: false,
+    transition: 'slide',
+    transitionSpeed: 500,
+    axis: 'x',
+    infinite: false,
+    lazyLoad: true,
+    fullPages: false,
+    prevText: 'Previous',
+    nextText: 'Next',
+    desktopDrag: false, // if true desktop users can drag with mouse
+    auto: false,
+    autoSpeed: 4000,
+    adaptiveHeight: false
+};
 
 class ReactSlider extends React.Component {
 
     constructor(props) {
         super(props);
 
-        this.state = ReactSlider.stateFromProps(props);
+
+        this.state = this.stateFromProps(props);
         this.state.styles = {};
 
         // map keys for both axes to use same functions for vertical and horizontal sliders
@@ -39,41 +58,30 @@ class ReactSlider extends React.Component {
 
     }
 
-    static stateFromProps(props) {
+    stateFromProps(props) {
+
         let state = {
-            visibleSlides: props.visibleSlides || 1,
-            moveSlides: props.moveSlides || 1,
-            axis: props.axis || 'x',
-            transition: props.transition || 'slide',
-            transitionSpeed: 500,
-            arrows: typeof props.arrows !== 'undefined' ? props.arrows : true,
-            infinite: props.infinite || false,
-            lazyLoad: true,
-            adaptiveHeight: props.adaptiveHeight || false,
             loadedImages: [],
-            dots: props.dots || false,
-            fullPages: props.fullPages || false,
-            prevText: props.prevText || 'Previous',
-            nextText: props.nextText || 'Next',
-            desktopDrag: props.desktopDrag || false, // if true desktop users can drag with mouse
-            auto: props.auto || false,
-            autoSpeed: props.autoSpeed || 4000,
 
             touch: typeof window !== 'undefined' && (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0))
         };
-        state.axisClass = state.axis === 'x' ? '' : 'vertical-slider';
 
-        if (props.children.length % state.visibleSlides === 0) {
-            state.pages = Math.ceil(props.children.length / state.moveSlides) - state.moveSlides;
+        state.axisClass = this.getOption('axis') === 'x' ? '' : 'vertical-slider';
+
+        let moveSlides = this.getOption('moveSlides');
+        let visibleSlides = this.getOption('visibleSlides');
+
+        if (props.children.length % visibleSlides === 0) {
+            state.pages = Math.ceil(props.children.length / moveSlides) - moveSlides;
         }
 
         let slideNumber = props.children.length;
-        if (state.fullPages) {
-            while(slideNumber % state.visibleSlides !==0) {
+        if (this.props.fullPages) {
+            while(slideNumber % visibleSlides !==0) {
                 slideNumber++;
             }
         }
-        state.pages = Math.ceil(slideNumber / state.moveSlides) - (state.visibleSlides - state.moveSlides);
+        state.pages = Math.ceil(slideNumber / moveSlides) - (visibleSlides - moveSlides);
 
         return state;
     }
@@ -92,7 +100,7 @@ class ReactSlider extends React.Component {
         window.addEventListener('resize', this._onResize);
 
         if (!this.state.touch) {
-            if (this.state.desktopDrag) {
+            if (this.props.desktopDrag) {
                 window.addEventListener('mouseup', this._onPointerUp);
                 window.addEventListener('mousemove', this._onPointerMove);
             }
@@ -107,7 +115,7 @@ class ReactSlider extends React.Component {
         window.removeEventListener('resize', this._onResize);
 
         if (!this.state.touch) {
-            if (this.state.desktopDrag) {
+            if (this.props.desktopDrag) {
                 window.removeEventListener('mouseup', this._onPointerUp);
                 window.removeEventListener('mousemove', this._onPointerMove);
             }
@@ -119,26 +127,29 @@ class ReactSlider extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        this.setState(ReactSlider.stateFromProps(props), () => this.setSliderStyles());
+        if(props.visibleSlides !== this.props.visibleSlides || props.moveSlides !== this.props.moveSlides) this.update();
     }
 
     render() {
-        if (this.state.auto) this.autoTimeout();
+
+        if (this.props.auto) this.autoTimeout();
 
         let children = this.getChildren();
+        let axis = this.getOption('axis');
 
         let listeners = this.state.touch ?  { onTouchStart: this.onPointerDown.bind(this) } : { onMouseDown: this.onPointerDown.bind(this) };
 
         let style = {
             transition: this.getTransitionCSS()
         };
-        style[this.keys[this.state.axis].size] = this.state.styles.overallSize+'px';
-        style[this.keys[this.state.axis].oppositeSize] = this.state.styles.oppositeSize+'px';
-        style[this.keys[this.state.axis].direction] = this.state.styles.position+'px';
+
+        style[this.keys[axis].size] = this.state.styles.overallSize+'px';
+        style[this.keys[axis].oppositeSize] = this.state.styles.oppositeSize+'px';
+        style[this.keys[axis].direction] = this.state.styles.position+'px';
         style.opacity = this.state.styles.opacity;
 
         let liStyle = {};
-        liStyle[this.keys[this.state.axis].size] = this.state.styles.slideSize+'px';
+        liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
 
         return <div ref="slider" className={"react-slider " + this.state.axisClass }>
 
@@ -156,21 +167,22 @@ class ReactSlider extends React.Component {
 
             </ul>
 
-            {this.state.arrows && this.props.children.length > this.state.visibleSlides && this.renderArrows()}
-            {this.state.dots && this.renderDots()}
+            {this.getOption('arrows') && this.props.children.length > this.getOption('visibleSlides') && this.renderArrows()}
+            {this.getOption('dots') && this.renderDots()}
         </div>;
     }
 
     renderArrows() {
 
+
         return <div className="react-slider-arrows">
             <button className="prev"
-                    disabled={!this.state.infinite &&this.state.styles.position >= this.state.styles.maxPosition}
+                    disabled={!this.props.infinite &&this.state.styles.position >= this.state.styles.maxPosition}
                     onClick={() => this.goToPrevSlide()}>
                 {this.state.prevText}
             </button>
             <button className="next"
-                    disabled={!this.state.infinite && this.state.styles.position <= this.state.styles.minPosition }
+                    disabled={!this.props.infinite  && this.state.styles.position <= this.state.styles.minPosition }
                     onClick={() => this.goToNextSlide()}>
                 {this.state.nextText}
             </button>
@@ -193,17 +205,26 @@ class ReactSlider extends React.Component {
         </ul>
     }
 
+    goToSlide(i) {
+        let page = i - (i%this.getOption('moveSlides'));
+        this.setSliderPosition( this.getPagePosition(page) );
+    }
+
     goToPrevSlide() {
-        this.setSliderPosition(this.state.styles.position + this.state.styles.slideSize*this.state.moveSlides );
+        this.setSliderPosition(this.state.styles.position + this.state.styles.slideSize*this.getOption('moveSlides') );
     }
 
     goToNextSlide() {
-        this.setSliderPosition( this.state.styles.position - this.state.styles.slideSize*this.state.moveSlides );
+        this.setSliderPosition( this.state.styles.position - this.state.styles.slideSize*this.getOption('moveSlides') );
+    }
+
+    update() {
+        this.setSliderStyles();
     }
 
     getPagePosition(page) {
         if (page === this.state.pages -1) return this.state.styles.minPosition;
-        return -this.state.styles.slideSize * this.state.moveSlides * page;
+        return -this.state.styles.slideSize * this.getOption('moveSlides') * page;
     }
 
     setSliderPosition(position) {
@@ -215,17 +236,17 @@ class ReactSlider extends React.Component {
                 position = this.state.styles.maxPosition;
             }
         }
+
         position = Math.min(Math.max(position, this.state.styles.minPosition ), this.state.styles.maxPosition);
 
         let styles = Object.assign({}, this.state.styles);
 
-        if (this.state.transition === 'fade') {
+        if (this.getOption('transition') === 'fade') {
             // fade out
             styles.opacity = 0;
             this.setState({
                 styles: styles
             }, () => {
-
                 // move and fade in
                 setTimeout(() => {
                     styles.opacity = 1;
@@ -233,7 +254,7 @@ class ReactSlider extends React.Component {
                     this.setState({
                         styles: styles
                     }, () => this.loadVisibleSlideImages());
-                }, this.state.transitionSpeed);
+                }, this.getOption('transitionSpeed') );
             });
 
         } else {
@@ -247,7 +268,9 @@ class ReactSlider extends React.Component {
 
     setSliderStyles() {
 
-        let slideSize = this.refs.slider[this.keys[this.state.axis].offsetSize] / this.state.visibleSlides;
+        let visibleSlides = this.getOption('visibleSlides');
+        let axis = this.getOption('axis');
+        let slideSize = this.refs.slider[this.keys[axis].offsetSize] / visibleSlides;
         let styles ={
             slideSize: slideSize,
             overallSize: slideSize * this.props.children.length,
@@ -255,13 +278,13 @@ class ReactSlider extends React.Component {
             maxPosition: 0
         };
 
-        styles.minPosition = -( this.props.children.length * styles.slideSize - styles.slideSize * this.state.visibleSlides);
-        if (this.state.fullPages && this.props.children % this.state.visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
+        styles.minPosition = -( this.props.children.length * styles.slideSize - styles.slideSize * visibleSlides);
+        if (this.props.fullPages && this.props.children % visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
 
         if (this.refs.slider.getElementsByClassName('react-slider-slide').length) {
 
             styles.oppositeSize = this.state.adaptiveHeight ?
-                this.refs.slider.getElementsByClassName('react-slider-slide')[this.state.activeSlide][this.keys[this.state.axis].offsetOpposite] :
+                this.refs.slider.getElementsByClassName('react-slider-slide')[this.getActiveSlide()][this.keys[axis].offsetOpposite] :
                 'auto';
         }
 
@@ -270,19 +293,24 @@ class ReactSlider extends React.Component {
         }, () => this.loadVisibleSlideImages());
     }
 
+    getActiveSlide() {
+        if (!this.state.styles.position) return 0;
+        return Math.abs( Math.round( this.state.styles.position / this.state.styles.slideSize ) );
+    }
+
 
     getTransitionCSS() {
-        switch (this.state.transition) {
+        switch (this.getOption('transition')) {
             case 'slide':
                 if (this.dragging) return 'none';
-                return (this.state.axis === 'x' ? 'left' : 'top')+' '+this.state.transitionSpeed+'ms ease-in';
+                return (this.getOption('axis') === 'x' ? 'left' : 'top')+' '+this.getOption('transitionSpeed')+'ms ease-in';
             case 'fade':
-                return 'opacity '+this.state.transitionSpeed+'ms ease-in';
+                return 'opacity '+this.getOption('transitionSpeed')+'ms ease-in';
         }
     }
 
     getChildren() {
-        if (!this.state.lazyLoad) return this.props.children;
+        if (!this.getOption('lazyLoad')) return this.props.children;
 
         this.imagesPerSlides = [];
 
@@ -352,9 +380,9 @@ class ReactSlider extends React.Component {
 
         if (!this.imagesPerSlides.length) return;
 
-        let activeSlide = Math.abs( Math.round( this.state.styles.position / this.state.styles.slideSize ) );
+        let activeSlide = this.getActiveSlide();
 
-        for (let i= activeSlide, iLength = activeSlide+this.state.visibleSlides; i< iLength; ++i) {
+        for (let i= activeSlide, iLength = activeSlide+this.getOption('visibleSlides'); i< iLength; ++i) {
 
             if (!this.imagesPerSlides[i]) continue;
 
@@ -398,20 +426,20 @@ class ReactSlider extends React.Component {
 
     magnetize() {
         if (this.direction) {
-            let pageSize = this.state.fullPage ?  this.state.styles.slideSize * this.state.visibleSlides : this.state.styles.slideSize * this.state.moveSlides;
+            let pageSize = this.state.fullPage ?  this.state.styles.slideSize * this.getOption('visibleSlides') : this.state.styles.slideSize * this.getOption('moveSlides');
             let position = Math.ceil(this.state.styles.position / pageSize) * pageSize;
 
             if (position === this.prevPosition) {
-
+                let axis = this.getOption('axis');
                 // If a clear direction was given to the drag go in that direction if delta was bigger than treshold (20px)
-                if (this.state.axis === 'x' && this.delta[0] > this.delta[1] && this.delta[0] > SLIDE_TO_NEXT_TRESHOLD) {
+                if (axis === 'x' && this.delta[0] > this.delta[1] && this.delta[0] > REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD) {
                     position = this.direction[0] === 'right' ? position - pageSize : position + pageSize;
-                } else if(this.state.axis === 'y' && this.delta[1] > this.delta[0] && this.delta[1] > SLIDE_TO_NEXT_TRESHOLD) {
+                } else if(axis === 'y' && this.delta[1] > this.delta[0] && this.delta[1] > REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD) {
                     position = this.direction[1] === 'bottom' ? position - pageSize : position + pageSize;
                 }
             }
 
-            this.setSliderPosition(position);
+            if (position !== this.prevPosition) this.setSliderPosition(position);
             this.direction = null;
         }
     }
@@ -424,7 +452,11 @@ class ReactSlider extends React.Component {
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
             this.goToNextSlide();
-        }, this.state.autoSpeed);
+        }, this.getOption('autoSpeed') );
+    }
+
+    getOption(option) {
+        return typeof this.props[option] === 'undefined' ? REACT_SLIDER_DEFAULT_OPTIONS[option] : this.props[option];
     }
 
 }

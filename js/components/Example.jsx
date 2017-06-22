@@ -12,10 +12,10 @@ class Example extends React.Component {
             dots: true,
             desktopDrag: true,
             auto: false,
-            transition: 'fade'
+            transition: 'slide'
         }
     }
-
+ 
     render() {
         return <div>
             <ReactSlider {...this.state}>

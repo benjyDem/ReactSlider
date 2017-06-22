@@ -282,8 +282,11 @@ class ReactSlider extends React.Component {
         return React.Children.map(
             this.props.children,
             (child, i) => {
+
                 this.imagesPerSlides.push([]);
-                return this.recursivelyFindImages(child, i)
+                return React.cloneElement(child, {
+                    children: this.recursivelyFindImages(child, i)
+                });
             }
         );
 
@@ -291,7 +294,7 @@ class ReactSlider extends React.Component {
 
     recursivelyFindImages(level, slide) {
         if (level.props && level.props.children) {
-            React.Children.map(level.props.children, child => {
+            return React.Children.map(level.props.children, child => {
 
                 if (child.type === "img" && this.state.loadedImages.indexOf(child.props.src) === -1) {
                     this.imagesPerSlides[slide].push(child.props.src);
@@ -314,12 +317,13 @@ class ReactSlider extends React.Component {
         for (let i= activeSlide, iLength = activeSlide+this.state.visibleSlides; i< iLength; ++i) {
 
             if (!this.imagesPerSlides[i]) continue;
+
             this.imagesPerSlides[i].forEach((imageToLoad) => {
                 let img = new Image();
-                if (img.complete) this.onImageLoad(imageToLoad);
-                else img.onload = this.onImageLoad.bind(this, imageToLoad);
+                img.onload = this.onImageLoad.bind(this, imageToLoad);
                 img.src=imageToLoad;
             });
+
 
         }
 

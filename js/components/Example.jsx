@@ -11,7 +11,7 @@ class Example extends React.Component {
             moveSlides: 1,
             dots: true,
             desktopDrag: true,
-            auto: true,
+            auto: false,
             transition: 'fade'
         }
     }
@@ -30,14 +30,16 @@ class Example extends React.Component {
                 <img src="images/0.jpg" alt="" />
             </div>
             <div>
-                test 4
+                <img src="images/1.jpg" alt="" />
             </div>
             <div>
                 <img src="images/0.jpg" alt="" />
             </div>
         </ReactSlider>
+
             <button onClick={() => this.changeVisible(this.state.visibleSlides+1)}>Increase Visible Slides</button>
             <button onClick={() => this.changeVisible(this.state.visibleSlides-1)}>Decrease Visible Slides</button>
+
         </div>
     }
 

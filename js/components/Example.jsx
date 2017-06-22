@@ -11,7 +11,8 @@ class Example extends React.Component {
             moveSlides: 1,
             dots: true,
             desktopDrag: true,
-            auto: true
+            auto: true,
+            transition: 'fade'
         }
     }
 

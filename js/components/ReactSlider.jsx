@@ -128,6 +128,7 @@ class ReactSlider extends React.Component {
         style[this.keys[this.state.axis].size] = this.state.styles.overallSize+'px';
         style[this.keys[this.state.axis].oppositeSize] = this.state.styles.oppositeSize+'px';
         style[this.keys[this.state.axis].direction] = this.state.styles.position+'px';
+        style.opacity = this.state.styles.opacity;
 
         let liStyle = {};
         liStyle[this.keys[this.state.axis].size] = this.state.styles.slideSize+'px';
@@ -208,9 +209,33 @@ class ReactSlider extends React.Component {
             }
         }
         position = Math.min(Math.max(position, this.state.styles.minPosition ), this.state.styles.maxPosition);
-        this.setState({
-            styles: Object.assign({}, this.state.styles,{position: position})
-        }, () => this.loadVisibleSlideImages());
+
+        let styles = Object.assign({}, this.state.styles);
+
+        if (this.state.transition === 'fade') {
+            // fade out
+            styles.opacity = 0;
+            this.setState({
+                styles: styles
+            }, () => {
+
+                // move and fade in
+                setTimeout(() => {
+                    styles.opacity = 1;
+                    styles.position = position;
+                    this.setState({
+                        styles: styles
+                    }, () => this.loadVisibleSlideImages());
+                }, this.state.transitionSpeed);
+            });
+
+        } else {
+            styles.position = position;
+            this.setState({
+                styles: styles
+            }, () => this.loadVisibleSlideImages());
+
+        }
     }
 
     setSliderStyles() {

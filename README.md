@@ -2,6 +2,10 @@
 
 Creates a responsive vertical or horizontal slider using React.
 
+### License
+
+Released under the MIT license - http://opensource.org/licenses/MIT
+
 ## Instanciation
 
 ```javascript

@@ -29,6 +29,13 @@ class ReactSlider extends React.Component {
             }
         };
 
+        this.imageComponents = [];
+        this.addImageComponent('img', 'src');
+        if (this.props.imageComponents) {
+            this.props.imageComponents.forEach((iC) => {
+                this.addImageComponent(iC[0], iC[1]);
+            });
+        }
 
     }
 
@@ -294,18 +301,51 @@ class ReactSlider extends React.Component {
 
     recursivelyFindImages(level, slide) {
         if (level.props && level.props.children) {
-            return React.Children.map(level.props.children, child => {
+            return React.Children.map(level.props.children, child => this.findImage(child, slide))
+        }
+        return level;
+    }
 
-                if (child.type === "img" && this.state.loadedImages.indexOf(child.props.src) === -1) {
-                    this.imagesPerSlides[slide].push(child.props.src);
+    /**
+     * Loops over image components and checks if their propsAttribute is
+     * already loaded. For exemple for the regular img component
+     * this.imageComponents[0][0] === 'img'
+     * this.imageComponents[0][1] === 'src'
+     * the function checks if each img's src has been added to the loadedImages
+     * array. If not it doesn't display them but replaces them with a div
+     * with the is-loading class
+     * @param child
+     * @param slide
+     * @returns {*}
+     */
+    findImage(child, slide) {
+
+        if (!child.props) return child;
+        let src;
+        for (let i = 0, iLength = this.imageComponents.length; i < iLength; i++ ) {
+
+            src = child.props[this.imageComponents[i][1]];
+
+            if (child.type === this.imageComponents[i][0] ) {
+
+                if(this.state.loadedImages.indexOf(src) === -1) {
+                    this.imagesPerSlides[slide].push(src);
                     return React.createElement('div', {
                         className: child.className ?child.className  +' is-loading' : ' is-loading'
                     });
-                } else
+                } else {
                     return this.recursivelyFindImages(child, slide);
-            })
+                }
+
+            }
         }
-        return level;
+
+        return this.recursivelyFindImages(child, slide);
+
+    }
+
+    addImageComponent(component, propsAttribute) {
+        this.imageComponents.push([component, propsAttribute]);
     }
 
     loadVisibleSlideImages() {

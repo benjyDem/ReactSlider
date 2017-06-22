@@ -272,9 +272,9 @@ class ReactSlider extends React.Component {
 
 
     getTransitionCSS() {
-        if (this.dragging) return 'none';
         switch (this.state.transition) {
             case 'slide':
+                if (this.dragging) return 'none';
                 return (this.state.axis === 'x' ? 'left' : 'top')+' '+this.state.transitionSpeed+'ms ease-in';
             case 'fade':
                 return 'opacity '+this.state.transitionSpeed+'ms ease-in';

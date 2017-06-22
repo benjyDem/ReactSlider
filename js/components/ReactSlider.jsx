@@ -8,7 +8,7 @@ const REACT_SLIDER_DEFAULT_OPTIONS = {
     dots: false,
     arrows: false,
     transition: 'slide',
-    transitionSpeed: 500,
+    transitionDuration: 500,
     axis: 'x',
     infinite: false,
     lazyLoad: true,
@@ -89,7 +89,7 @@ class ReactSlider extends React.Component {
 
         this._onPointerUp = this.onPointerUp.bind(this);
         this._onPointerMove = this.onPointerMove.bind(this);
-        this._onResize = this.onResize.bind(this);
+        this._onResize = this.update.bind(this);
 
         window.addEventListener('resize', this._onResize);
 
@@ -229,6 +229,7 @@ class ReactSlider extends React.Component {
 
     setSliderPosition(position) {
 
+
         if (this.state.infinite) {
             if (position > this.state.styles.maxPosition) {
                 position = this.state.styles.minPosition;
@@ -240,6 +241,9 @@ class ReactSlider extends React.Component {
         position = Math.min(Math.max(position, this.state.styles.minPosition ), this.state.styles.maxPosition);
 
         let styles = Object.assign({}, this.state.styles);
+        let currentSlide = Math.abs(this.state.styles.position || 0) / styles.slideSize;
+        let nextSlide = Math.abs(position) / styles.slideSize;
+        if (this.props.beforeSlide) this.props.beforeSlide(currentSlide, nextSlide);
 
         if (this.getOption('transition') === 'fade') {
             // fade out
@@ -253,15 +257,21 @@ class ReactSlider extends React.Component {
                     styles.position = position;
                     this.setState({
                         styles: styles
-                    }, () => this.loadVisibleSlideImages());
-                }, this.getOption('transitionSpeed') );
+                    }, () => {
+                        if (this.props.afterSlide) this.props.afterSlide(nextSlide, currentSlide);
+                        this.loadVisibleSlideImages();
+                    });
+                }, this.getOption('transitionDuration') );
             });
 
         } else {
             styles.position = position;
             this.setState({
                 styles: styles
-            }, () => this.loadVisibleSlideImages());
+            }, () => {
+                if (this.props.afterSlide) this.props.afterSlide(nextSlide, currentSlide);
+                this.loadVisibleSlideImages();
+            });
 
         }
     }
@@ -304,9 +314,9 @@ class ReactSlider extends React.Component {
         switch (this.getOption('transition')) {
             case 'slide':
                 if (this.dragging) return 'none';
-                return (this.getOption('axis') === 'x' ? 'left' : 'top')+' '+this.getOption('transitionSpeed')+'ms ease-in';
+                return (this.getOption('axis') === 'x' ? 'left' : 'top')+' '+this.getOption('transitionDuration')+'ms ease-in';
             case 'fade':
-                return 'opacity '+this.getOption('transitionSpeed')+'ms ease-in';
+                return 'opacity '+this.getOption('transitionDuration')+'ms ease-in';
         }
     }
 
@@ -442,10 +452,6 @@ class ReactSlider extends React.Component {
             if (this.getOption('transition') === 'slide' || position !== this.prevPosition) this.setSliderPosition(position);
             this.direction = null;
         }
-    }
-
-    onResize() {
-        this.setSliderStyles();
     }
 
     autoTimeout() {

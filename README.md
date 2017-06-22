@@ -33,46 +33,33 @@ return  <ReactSlider {...settings}>
 
 ## Props
 
-```javascript
-let props = {
-    "visibleSlides": 1, // {Int}
-    "moveSlides": 1, // {Int}
-    "axis": "x", // {"x" || "y"}
-    "transition": "slide",
-    "transitionSpeed": 500, // {Int} time in ms
-    "arrows": true, // {Bool}
-    "infinite": false, // {Bool}
-    "lazyLoad": true, // {Bool}
-    "adaptiveHeight":  false, // {Bool}
-    "loadedImages": [],
-    "dots": false, // {Bool}
-    "fullPages": false, // if true will add whitespace if a page doesn't contain enough visibleSlides
-    "prevText": "Previous",
-    "nextText": "Next",
-    "desktopDrag": false, // {Bool} if true desktop users can drag with mouse
-    "auto": false, // {Bool}
-    "autoSpeed": 4000, // {Int} time in ms
-    "imageComponents": [] // {Array}
-}
+| Property           | Type              | Description                                                                                                                                                              | Default    |
+|--------------------|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| visibleSlides      | int               | Number of slides to display at a time                                                                                                                                    | 1          |
+| moveSlides         | int               | Number of slides to move at a time                                                                                                                                       | 1          |
+| axis               | 'x' || 'y'        | The slider axis                                                                                                                                                          | x          |
+| transition         | 'fade' || 'slide' | The type of transition the slider uses                                                                                                                                   | 'slide'    |
+| transitionDuration | int               | The duration (in ms) of each transition                                                                                                                                  | 500        |
+| arrows             | bool              | Displays next and prev arrows                                                                                                                                            | false      |
+| infinite           | bool              | If true then click next on last slide will cause slider to go back to first slide                                                                                        | false      |
+| lazyLoad           | bool              | If true then images will not be loaded before their slide is active                                                                                                      | true       |
+| adaptiveHeight     | bool              | If true the slider will change heights to fit the current active slide                                                                                                   | false      |
+| dots               | bool              | Displays pagination dots for the slider                                                                                                                                  | false      |
+| fullPages          | bool              | If true the slider will have extra white space representing empty slides if the number of slides if the number of slides isn't a multiple of the amount of visibleSlides | false      |
+| prevText           | string            | Text within the previous button                                                                                                                                          | 'Previous' |
+| nextText           | string            | Text within the next button                                                                                                                                              | 'Next'     |
+| desktopDrag        | bool              | Should the desktop version of the slider allow drag and drop to slide                                                                                                    | false      |
+| auto               | bool              | If true the slider will start sliding automatically to next slide                                                                                                        | false      |
+| autoSpeed          | int               | Speed at which the slider automatically changes slides                                                                                                                   | 4000       |
+| beforeSlide        | function          | A callback that fires before the slider slides, it sends two parameters : currentSlide and nextSlide                                                                     |            |
+| afterSlide         | function          | A callback that fires after the slider has slided, it sends two parameters : currentSlide and previousSlide                                                              |            |
 
-```
+## Methods
 
-## imageComponents
-
-Thye imageComponents prop is used for lazy loading, in the case where you have a custom component that
-returns an img element. In my use case I had a ResponsiveImage component wit two props depending on
-screen size : large and small.
-This is how i initialized this prop :
-
-```
-    imageComponents: [[ResponsiveImage, isMobile ? 'small' : 'large']]
-```
-
-First attribute is the component type, the second is the prop in which we can find the img src.
-ReactSlider has a default imageComponent which is the following 
-```
-['img', 'src']
-```
-The plugin loops on each slids children elements using React.Children.map, then it checks the type of 
-the child components (for example 'img' or ResponsiveImage), if the type matches a known imageComponent
-then it will check the element's props for example 'src' or 'large' to find the image to lazy load.
+| Method                   | Arguments               | Description                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|--------------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| goToSlide                | slideIndex              | Goes to the target slide in your slider                                                                                                                                                                                                                                                                                                                                                                                         |
+| goToPrevSlide            |                         | Goes to the previous slide in your slider                                                                                                                                                                                                                                                                                                                                                                                       |
+| goToNextSlide            |                         | Goes to the next slide in your slider                                                                                                                                                                                                                                                                                                                                                                                           |
+| update                   |                         | Updates slider styles                                                                                                                                                                                                                                                                                                                                                                                                           |
+| static addImageComponent | Component, srcAttribute | LazyLoading parses images present in the slider's children. However some users may have custom components that render images. This method allows you to make ReactSlider consider those elements as images and lazyload them as well. For exemple, if you have a component named <MyImage imgSrc="my_src.jpg"> then you would invoke addImageComponent in the following way : ``` ReactSlider.addImageComponent(MyImage, 'imgSrc'); ``` |

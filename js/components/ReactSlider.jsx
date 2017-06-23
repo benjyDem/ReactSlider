@@ -82,10 +82,7 @@ class ReactSlider extends React.Component {
 
     componentDidMount() {
 
-        // wait for rendering to compute sizes
-        requestAnimationFrame(() => {
-            this.setSliderStyles();
-        });
+        this.setSliderStyles();
 
         this._onPointerUp = this.onPointerUp.bind(this);
         this._onPointerMove = this.onPointerMove.bind(this);

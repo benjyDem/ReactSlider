@@ -103,12 +103,6 @@ class ReactSlider extends React.Component {
             window.addEventListener('touchmove', this._onPointerMove);
         }
 
-        // size loading slides to slider height on mount
-        let slides = this.refs.slider.getElementsByClassName('is-loading');
-        for (let i = 0, iLength = slides.length; i<iLength; ++i) {
-            slides[i].style.minHeight = this.refs.slider.offsetHeight+'px';
-        }
-
     }
 
     componentWillUnmount() {
@@ -230,7 +224,7 @@ class ReactSlider extends React.Component {
     setSliderPosition(position) {
 
 
-        if (this.state.infinite) {
+        if (this.props.infinite) {
             if (position > this.state.styles.maxPosition) {
                 position = this.state.styles.minPosition;
             } else if (position < this.state.styles.minPosition) {
@@ -353,18 +347,19 @@ class ReactSlider extends React.Component {
      */
     findImages(level, slide) {
         if (level.props && level.props.children) {
+
             return React.Children.map(level.props.children, child => {
-                if (!child.props) return child;
+                if (!child || !child.props || child.props.dangerouslySetInnerHTML) return child;
                 let src;
                 for (let i = 0, iLength = REACT_SLIDER_IMAGE_COMPONENTS.length; i < iLength; i++ ) {
-                    src = child.props[REACT_SLIDER_IMAGE_COMPONENTS[i][1]];
 
                     if (child.type === REACT_SLIDER_IMAGE_COMPONENTS[i][0] ) {
+                        src = child.props[REACT_SLIDER_IMAGE_COMPONENTS[i][1]];
 
                         if(this.state.loadedImages.indexOf(src) === -1) {
                             this.imagesPerSlides[slide].push(src);
                             return React.createElement('div', {
-                                className: child.className ?child.className  +' is-loading' : ' is-loading'
+                                className: child.className ? child.className  +' is-loading' : ' is-loading'
                             });
                         } else {
                             return child;
@@ -377,7 +372,8 @@ class ReactSlider extends React.Component {
                     children: this.findImages(child, slide)
                 });
 
-            })
+            });
+
         }
         return level;
     }

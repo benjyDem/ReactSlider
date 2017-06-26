@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-const REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD = 15;
+const REACT_SLIDER_SLIDE_TO_NEXT_TRESHOLD = 5;
 const REACT_SLIDER_DEFAULT_OPTIONS = {
     moveSlides: 1,
     visibleSlides: 1,
@@ -75,15 +75,14 @@ class ReactSlider extends React.Component {
                 slideNumber++;
             }
         }
-        state.pages = Math.ceil(slideNumber / moveSlides) - (visibleSlides - moveSlides);
 
         return state;
     }
 
     componentDidMount() {
 
+        // wait for rendering to compute sizes
         this.setSliderStyles();
-
         this._onPointerUp = this.onPointerUp.bind(this);
         this._onPointerMove = this.onPointerMove.bind(this);
         this._onResize = this.update.bind(this);
@@ -270,6 +269,7 @@ class ReactSlider extends React.Component {
     setSliderStyles() {
 
         let visibleSlides = this.getOption('visibleSlides');
+        let moveSlides = this.getOption('moveSlides');
         let axis = this.getOption('axis');
         let slideSize = this.refs.slider[this.keys[axis].offsetSize] / visibleSlides;
         let styles ={
@@ -280,7 +280,7 @@ class ReactSlider extends React.Component {
         };
 
         styles.minPosition = -( this.props.children.length * styles.slideSize - styles.slideSize * visibleSlides);
-        if (this.props.fullPages && this.props.children % visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
+        if (this.props.fullPages && this.props.children.length % visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
 
         if (this.refs.slider.getElementsByClassName('react-slider-slide').length) {
 
@@ -289,9 +289,11 @@ class ReactSlider extends React.Component {
                 'auto';
         }
 
+
         this.setState({
             mounted: true,
-            styles: styles
+            styles: styles,
+            pages :  Math.ceil(this.props.children.length / moveSlides) - (visibleSlides - moveSlides)
         }, () => this.loadVisibleSlideImages());
     }
 

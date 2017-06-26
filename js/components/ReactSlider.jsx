@@ -86,6 +86,7 @@ class ReactSlider extends React.Component {
         this._onPointerUp = this.onPointerUp.bind(this);
         this._onPointerMove = this.onPointerMove.bind(this);
         this._onResize = this.update.bind(this);
+        this.isVisible = this.refs.slider.offsetParent !== null;
 
         window.addEventListener('resize', this._onResize);
 
@@ -118,7 +119,9 @@ class ReactSlider extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        if(props.visibleSlides !== this.props.visibleSlides || props.moveSlides !== this.props.moveSlides) this.update();
+        let isVisible = this.refs.slider.offsetParent !== null;
+        if(props.visibleSlides !== this.props.visibleSlides || props.moveSlides !== this.props.moveSlides || isVisible !== this.isVisible) this.update();
+        this.isVisible = isVisible;
     }
 
     render() {
@@ -128,7 +131,11 @@ class ReactSlider extends React.Component {
         let children = this.getChildren();
         let axis = this.getOption('axis');
 
-        let listeners = this.state.touch ?  { onTouchStart: this.onPointerDown.bind(this) } : { onMouseDown: this.onPointerDown.bind(this) };
+        let listeners = {};
+        if (this.state.touch)
+            listeners.onTouchStart = this.onPointerDown.bind(this);
+        else if (this.getOption('desktopDrag'))
+            listeners.onMouseDown = this.onPointerDown.bind(this);
 
         let style = {
             transition: this.getTransitionCSS()
@@ -218,7 +225,6 @@ class ReactSlider extends React.Component {
     }
 
     setSliderPosition(position) {
-
 
         if (this.props.infinite) {
             if (position > this.state.styles.maxPosition) {

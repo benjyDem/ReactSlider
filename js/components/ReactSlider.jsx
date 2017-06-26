@@ -120,7 +120,20 @@ class ReactSlider extends React.Component {
 
     componentWillReceiveProps(props) {
         let isVisible = this.refs.slider.offsetParent !== null;
-        if(props.visibleSlides !== this.props.visibleSlides || props.moveSlides !== this.props.moveSlides || isVisible !== this.isVisible) this.update();
+
+        if( props.visibleSlides !== this.props.visibleSlides ||
+            props.moveSlides !== this.props.moveSlides ||
+            isVisible !== this.isVisible ||
+            props.children.length !== this.props.children.length) {
+
+            let axis = this.getOption('axis');
+            if (this.refs.slider.style && this.refs.slider.style[this.keys[axis].size ]) {
+                this.refs.slider.style[this.keys[axis].size ] = 'auto';
+            }
+            setTimeout(() => this.update(), 0);
+
+        }
+
         this.isVisible = isVisible;
     }
 
@@ -170,7 +183,6 @@ class ReactSlider extends React.Component {
     }
 
     renderArrows() {
-
 
         return <div className="react-slider-arrows">
             <button className="prev"
@@ -274,10 +286,11 @@ class ReactSlider extends React.Component {
 
     setSliderStyles() {
 
+        let axis = this.getOption('axis');
         let visibleSlides = this.getOption('visibleSlides');
         let moveSlides = this.getOption('moveSlides');
-        let axis = this.getOption('axis');
         let slideSize = this.refs.slider[this.keys[axis].offsetSize] / visibleSlides;
+        let children = this.props.children ? this.props.children.length: 0;
         let styles ={
             slideSize: slideSize,
             overallSize: slideSize * this.props.children.length,
@@ -285,8 +298,7 @@ class ReactSlider extends React.Component {
             maxPosition: 0
         };
 
-        styles.minPosition = -( this.props.children.length * styles.slideSize - styles.slideSize * visibleSlides);
-        if (this.props.fullPages && this.props.children.length % visibleSlides !== 0 ) styles.minPosition-= styles.slideSize;
+        styles.minPosition = -( children * styles.slideSize - styles.slideSize * visibleSlides);
 
         if (this.refs.slider.getElementsByClassName('react-slider-slide').length) {
 
@@ -389,7 +401,7 @@ class ReactSlider extends React.Component {
 
     loadVisibleSlideImages() {
 
-        if (!this.imagesPerSlides.length) return;
+        if (!this.imagesPerSlides || !this.imagesPerSlides.length) return;
 
         let activeSlide = this.getActiveSlide();
 

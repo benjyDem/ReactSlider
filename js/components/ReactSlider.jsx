@@ -188,12 +188,12 @@ class ReactSlider extends React.Component {
             <button className="prev"
                     disabled={!this.props.infinite &&this.state.styles.position >= this.state.styles.maxPosition}
                     onClick={() => this.goToPrevSlide()}>
-                {this.state.prevText}
+                {this.getOption('prevText')}
             </button>
             <button className="next"
                     disabled={!this.props.infinite  && this.state.styles.position <= this.state.styles.minPosition }
                     onClick={() => this.goToNextSlide()}>
-                {this.state.nextText}
+                {this.getOption('nextText')}
             </button>
         </div>;
     }

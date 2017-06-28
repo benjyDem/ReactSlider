@@ -254,23 +254,25 @@ class ReactSlider extends React.Component {
         if (this.props.beforeSlide) this.props.beforeSlide(currentSlide, nextSlide);
 
         if (this.getOption('transition') === 'fade') {
-            // fade out
-            styles.opacity = 0;
-            this.setState({
-                styles: styles
-            }, () => {
-                // move and fade in
-                setTimeout(() => {
-                    styles.opacity = 1;
-                    styles.position = position;
-                    this.setState({
-                        styles: styles
-                    }, () => {
-                        if (this.props.afterSlide) this.props.afterSlide(nextSlide, currentSlide);
-                        this.loadVisibleSlideImages();
-                    });
-                }, this.getOption('transitionDuration') );
-            });
+            if(currentSlide !== nextSlide) {
+                // fade out
+                styles.opacity = 0;
+                this.setState({
+                    styles: styles
+                }, () => {
+                    // move and fade in
+                    setTimeout(() => {
+                        styles.opacity = 1;
+                        styles.position = position;
+                        this.setState({
+                            styles: styles
+                        }, () => {
+                            if (this.props.afterSlide) this.props.afterSlide(nextSlide, currentSlide);
+                            this.loadVisibleSlideImages();
+                        });
+                    }, this.getOption('transitionDuration') );
+                });
+            }
 
         } else {
             styles.position = position;

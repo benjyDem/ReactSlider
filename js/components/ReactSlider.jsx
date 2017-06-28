@@ -159,9 +159,14 @@ class ReactSlider extends React.Component {
         style[this.keys[axis].direction] = this.state.styles.position+'px';
         style.opacity = this.state.styles.opacity;
 
+
         let liStyle = {};
         liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
-        return <div ref="slider" className={"react-slider " + this.state.axisClass + (this.state.mounted ? '' : ' is-mounting') }>
+
+        //apply liStyle to slider to prevent 1px overflow on rounding
+        return <div ref="slider"
+                    className={"react-slider " + this.state.axisClass + (this.state.mounted ? '' : ' is-mounting') }
+                    style={liStyle}>
 
             <ul className="react-slider-slides"
                 {...listeners}

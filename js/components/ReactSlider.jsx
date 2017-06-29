@@ -134,6 +134,11 @@ class ReactSlider extends React.Component {
 
         }
 
+        if (typeof props.activeSlide !== undefined && props.activeSlide !== this.previousActiveSlide) {
+            this.previousActiveSlide = props.activeSlide;
+            this.goToSlide(props.activeSlide);
+        }
+
         this.isVisible = isVisible;
     }
 
@@ -164,7 +169,7 @@ class ReactSlider extends React.Component {
         liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
 
         let viewPortStyle = {};
-        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('moveSlides'))+'px';
+        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('visibleSlides'))+'px';
 
         //apply viewPortStyle to slider to prevent 1px overflow on rounding
         return <div ref="slider"
@@ -260,7 +265,6 @@ class ReactSlider extends React.Component {
         let currentSlide = Math.abs(this.state.styles.position || 0) / styles.slideSize;
         let nextSlide = Math.abs(position) / styles.slideSize;
         if (this.props.beforeSlide) this.props.beforeSlide(currentSlide, nextSlide);
-
         if (this.getOption('transition') === 'fade') {
             if(currentSlide !== nextSlide) {
                 // fade out
@@ -295,6 +299,7 @@ class ReactSlider extends React.Component {
     }
 
     setSliderStyles() {
+        this.refs.slider.removeAttribute('style');
 
         let axis = this.getOption('axis');
         let visibleSlides = this.getOption('visibleSlides');

@@ -169,7 +169,7 @@ class ReactSlider extends React.Component {
         liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
 
         let viewPortStyle = {};
-        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('visibleSlides'))+'px';
+        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('moveSlides'))+'px';
 
         //apply viewPortStyle to slider to prevent 1px overflow on rounding
         return <div ref="slider"
@@ -299,7 +299,6 @@ class ReactSlider extends React.Component {
     }
 
     setSliderStyles() {
-        this.refs.slider.removeAttribute('style');
 
         let axis = this.getOption('axis');
         let visibleSlides = this.getOption('visibleSlides');

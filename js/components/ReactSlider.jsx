@@ -28,7 +28,7 @@ class ReactSlider extends React.Component {
     constructor(props) {
         super(props);
 
-
+        this.childrenLength = React.Children.count(props.children);
         this.state = this.stateFromProps(props);
         this.state.styles = {};
 
@@ -49,7 +49,6 @@ class ReactSlider extends React.Component {
                 direction: 'top'
             }
         };
-
     }
 
     stateFromProps(props) {
@@ -116,27 +115,31 @@ class ReactSlider extends React.Component {
             window.removeEventListener('touchmove', this._onPointerMove);
         }
 
+        if (typeof this.props.activeSlide !== "undefined" ) {
+            this.previousActiveSlide = this.props.activeSlide;
+            this.goToSlide(this.props.activeSlide);
+        }
+
     }
 
     componentWillReceiveProps(props) {
         let isVisible = this.refs.slider.offsetParent !== null;
+        let childrenLength = React.Children.count(props.children);
 
         if( props.visibleSlides !== this.props.visibleSlides ||
             props.moveSlides !== this.props.moveSlides ||
             isVisible !== this.isVisible ||
-            props.children.length !== this.props.children.length) {
+            childrenLength!== this.childrenLength) {
+
+            this.childrenLength = childrenLength;
+
 
             let axis = this.getOption('axis');
             if (this.refs.slider.style && this.refs.slider.style[this.keys[axis].size ]) {
                 this.refs.slider.style[this.keys[axis].size ] = 'auto';
             }
+
             setTimeout(() => this.update(), 0);
-
-        }
-
-        if (typeof props.activeSlide !== undefined && props.activeSlide !== this.previousActiveSlide) {
-            this.previousActiveSlide = props.activeSlide;
-            this.goToSlide(props.activeSlide);
         }
 
         this.isVisible = isVisible;
@@ -169,28 +172,29 @@ class ReactSlider extends React.Component {
         liStyle[this.keys[axis].size] = this.state.styles.slideSize+'px';
 
         let viewPortStyle = {};
-        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('moveSlides'))+'px';
+        viewPortStyle[this.keys[axis].size] = (this.state.styles.slideSize*this.getOption('visibleSlides'))+'px';
 
         //apply viewPortStyle to slider to prevent 1px overflow on rounding
         return <div ref="slider"
-                    className={"react-slider " + this.state.axisClass + (this.state.mounted ? '' : ' is-mounting') }
-                    style={viewPortStyle}>
+                    className={"react-slider " + this.state.axisClass + (this.state.mounted ? '' : ' is-mounting') }>
 
-            <ul className="react-slider-slides"
-                {...listeners}
-                style={ style }>
+            <div ref="sliderWrapper" className="react-slider-slides-wrapper" style={viewPortStyle}>
+                <ul className="react-slider-slides"
+                    {...listeners}
+                    style={ style }>
 
-                { children.map((child, i) => {
-                    return <li key={i}
-                               style={liStyle}
-                               className="react-slider-slide">
-                        {child}
-                    </li>
-                })}
+                    { children.map((child, i) => {
+                        return <li key={i}
+                                   style={liStyle}
+                                   className="react-slider-slide">
+                            {child}
+                        </li>
+                    })}
 
-            </ul>
+                </ul>
+            </div>
 
-            {this.getOption('arrows') && this.props.children.length > this.getOption('visibleSlides') && this.renderArrows()}
+            {this.getOption('arrows') && this.childrenLength > this.getOption('visibleSlides') && this.renderArrows()}
             {this.props.dots && this.renderDots()}
         </div>;
     }
@@ -250,7 +254,6 @@ class ReactSlider extends React.Component {
     }
 
     setSliderPosition(position) {
-
         if (this.props.infinite) {
             if (position > this.state.styles.maxPosition) {
                 position = this.state.styles.minPosition;
@@ -299,15 +302,16 @@ class ReactSlider extends React.Component {
     }
 
     setSliderStyles() {
-
+        this.refs.sliderWrapper.removeAttribute('style');
         let axis = this.getOption('axis');
+
         let visibleSlides = this.getOption('visibleSlides');
         let moveSlides = this.getOption('moveSlides');
-        let slideSize = this.refs.slider[this.keys[axis].offsetSize] / visibleSlides;
-        let children = this.props.children ? this.props.children.length: 0;
+        let slideSize = Math.ceil(this.refs.sliderWrapper[this.keys[axis].offsetSize] / visibleSlides);
+        let children = this.props.children ? this.childrenLength: 0;
         let styles ={
             slideSize: slideSize,
-            overallSize: slideSize * this.props.children.length,
+            overallSize: slideSize * this.childrenLength,
             position: 0,
             maxPosition: 0
         };
@@ -325,7 +329,7 @@ class ReactSlider extends React.Component {
         this.setState({
             mounted: true,
             styles: styles,
-            pages :  Math.ceil(this.props.children.length / moveSlides) - (visibleSlides - moveSlides)
+            pages :  Math.ceil(this.childrenLength / moveSlides) - (visibleSlides - moveSlides)
         }, () => this.loadVisibleSlideImages());
     }
 
@@ -448,11 +452,16 @@ class ReactSlider extends React.Component {
 
     onPointerMove(e) {
         if (this.dragging) {
+
             let coords = this.state.touch ? [e.changedTouches[0].pageX, e.changedTouches[0].pageY] : [e.pageX, e.pageY];
+
             this.direction = [coords[0] > this.coords[0] ? 'left' : 'right', coords[1] > this.coords[1] ? 'bottom' : 'top'];
-            this.setSliderPosition(this.state.styles.position + (coords[0] - this.coords[0]) );
+
+            this.setSliderPosition(this.state.styles.position + (this.getOption('axis') === "x" ? coords[0] - this.coords[0] : coords[1] - this.coords[1]) );
+
             this.delta = [Math.abs(coords[0] - this.coords[0]), Math.abs(coords[1] - this.coords[1])];
             this.coords = coords;
+
         }
     }
 

@@ -26,6 +26,22 @@
   pointer-events: none;
 }
 
+.react-slider-dots-altview {
+  text-align: center;
+}
+.react-slider-dots-altview li {
+  display: inline-block;
+  margin: 0 20px;
+}
+.react-slider-dots-altview button {
+  display: block;
+  cursor: pointer;
+  opacity: .5;
+}
+.react-slider-dots-altview button:disabled {
+  opacity: 1;
+}
+
 .react-slider-slides {
   position: relative;
   min-width: 100%;

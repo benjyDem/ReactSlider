@@ -26,7 +26,24 @@
     }
 
 }
+.react-slider-dots-altview {
+    text-align: center;
 
+    li {
+        display: inline-block;
+        margin: 0 20px;
+    }
+
+    button {
+        display: block;
+        cursor: pointer;
+        opacity: .5;
+    }
+
+    button:disabled {
+        opacity: 1;
+    }
+}
 .react-slider-slides {
     position: relative;
     min-width: 100%;

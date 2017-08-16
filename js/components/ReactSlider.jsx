@@ -217,18 +217,43 @@ class ReactSlider extends React.Component {
 
     renderDots() {
         let pages = [];
-        for (let i = 0; i<this.state.pages; ++i) { pages.push(i); }
-        return <ul className="react-slider-dots">
-            {
-                pages.map((page) => {
-                    let position = this.getPagePosition(page);
-                    return <li key={"page-dot-"+page}>
-                        <button  disabled={this.state.styles.position === position }
-                                 onClick={() => this.setSliderPosition(position)}>{page+1}</button>
-                    </li>
-                })
-            }
-        </ul>
+        if (typeof this.props.dots == 'object' || Array.isArray(this.props.dots) ) {
+            for (let i = 0; i<this.state.pages; ++i) { pages.push(i); }
+            return <ul className="react-slider-dots-altview">
+                    {
+                        this.props.dots.map((pic, index) => {
+                            let position = this.getPagePosition(index);
+                            return <li key={"page-altView page-dot-"+index}>
+                                <button  disabled={this.state.styles.position === position}
+                                         role="tab"
+                                         tabIndex={this.state.styles.position === position ? 0 : -1}
+                                         aria-selected={this.state.styles.position === position}
+                                         aria-controls={"react-slider-slide-"+index}
+                                         onClick={() => this.setSliderPosition(position)}>
+                                            <img src={pic.altView} />
+                                         </button>
+                            </li>
+                        })
+                    }
+                </ul> 
+        } else {
+            for (let i = 0; i<this.state.pages; ++i) { pages.push(i); }
+            return <ul className="react-slider-dots">
+                {
+                    pages.map((page) => {
+                        let position = this.getPagePosition(page);
+                        return <li key={"page-dot-"+page}>
+                            <button  disabled={this.state.styles.position === position}
+                                     role="tab"
+                                     tabIndex={this.state.styles.position === position ? 0 : -1}
+                                     aria-selected={this.state.styles.position === position}
+                                     aria-controls={"react-slider-slide-"+page}
+                                     onClick={() => this.setSliderPosition(position)}>{"Page "+(page+1)}</button>
+                        </li>
+                    })
+                }
+            </ul>
+        }        
     }
 
     goToSlide(i) {
